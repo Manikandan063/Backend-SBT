@@ -10,27 +10,38 @@ const __dirname = path.dirname(__filename);
 const rootPath = path.resolve(__dirname, "../../");
 dotenv.config({ path: path.join(rootPath, ".env") });
 
-const missing = (key) => {
-  if (!process.env[key]) throw new Error(`Missing environment variable: ${key}`);
-};
+if (!process.env.DATABASE_URL) {
+  const missing = (key) => {
+    if (!process.env[key]) throw new Error(`Missing environment variable: ${key}`);
+  };
 
-missing("DB_NAME");
-missing("DB_USER");
-missing("DB_PASSWORD");
+  missing("DB_NAME");
+  missing("DB_USER");
+  missing("DB_PASSWORD");
+}
 
-export const sequelize = new Sequelize({
-  dialect: "postgres",
-  database: process.env.DB_NAME,
-  username: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  host: process.env.DB_HOST || "localhost",
-  port: process.env.DB_PORT ? Number(process.env.DB_PORT) : 5432,
-  logging: false,
-  define: {
-    underscored: true,
-    timestamps: true,
-  }
-});
+export const sequelize = process.env.DATABASE_URL 
+  ? new Sequelize(process.env.DATABASE_URL, {
+      dialect: "postgres",
+      logging: false,
+      define: {
+        underscored: true,
+        timestamps: true,
+      }
+    })
+  : new Sequelize({
+      dialect: "postgres",
+      database: process.env.DB_NAME,
+      username: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      host: process.env.DB_HOST || "localhost",
+      port: process.env.DB_PORT ? Number(process.env.DB_PORT) : 5432,
+      logging: false,
+      define: {
+        underscored: true,
+        timestamps: true,
+      }
+    });
 
 // Test connection
 export const connectDB = async () => {
