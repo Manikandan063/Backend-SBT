@@ -27,7 +27,16 @@ export const sequelize = process.env.DATABASE_URL
       define: {
         underscored: true,
         timestamps: true,
-      }
+      },
+      // Automatically enable SSL for external Render databases
+      ...(process.env.DATABASE_URL.includes("render.com") && {
+        dialectOptions: {
+          ssl: {
+            require: true,
+            rejectUnauthorized: false, // Required for Render external connections
+          },
+        },
+      }),
     })
   : new Sequelize({
       dialect: "postgres",
