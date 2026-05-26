@@ -1,0 +1,93 @@
+{
+	"info": {
+		"name": "School Admin Testing Flow",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Register School Admin (as SuperAdmin)",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{superadmin_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"School Admin\",\n    \"email\": \"schooladmin@test.com\",\n    \"password\": \"password123\",\n    \"role\": \"school_admin\"\n}",
+					"options": {"raw": {"language": "json"}}
+				},
+				"url": "{{base_url}}/api/auth/register-admin"
+			}
+		},
+		{
+			"name": "2. School Admin Login",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var jsonData = pm.response.json();",
+							"if (jsonData.token) {",
+							"    pm.collectionVariables.set(\"school_admin_token\", jsonData.token);",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": \"schooladmin@test.com\",\n    \"password\": \"password123\"\n}",
+					"options": {"raw": {"language": "json"}}
+				},
+				"url": "{{base_url}}/api/auth/login"
+			}
+		},
+		{
+			"name": "3. Create a New Bus (as School Admin)",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{school_admin_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"busRegisterNo\": \"TN-37-XY-9999\",\n    \"busNumber\": \"Bus 10\",\n    \"capacity\": 40,\n    \"gpsDeviceId\": \"GPS_BUS_10\",\n    \"routeName\": \"Peelamedu to School\",\n    \"schoolId\": \"11111111-1111-1111-1111-111111111111\",\n    \"driverName\": \"Murugan\",\n    \"driverPhoneNumber\": \"9843212345\"\n}",
+					"options": {"raw": {"language": "json"}}
+				},
+				"url": "{{base_url}}/api/buses"
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:5000"
+		},
+		{
+			"key": "superadmin_token",
+			"value": ""
+		},
+		{
+			"key": "school_admin_token",
+			"value": ""
+		}
+	]
+}

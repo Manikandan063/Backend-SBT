@@ -1,0 +1,11 @@
+{
+  "ignore": [
+    "*.log",
+    "*.sqlite",
+    "node_modules/",
+    "scratch/",
+    "uploads/",
+    "settings.json"
+  ],
+  "ext": "js,mjs,cjs,json"
+}

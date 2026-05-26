@@ -1,0 +1,10 @@
+{
+  "appName": "XTOWN School Tracker",
+  "contactEmail": "support@xtown.com",
+  "maintenanceMode": false,
+  "autoBackup": true,
+  "notificationEmails": true,
+  "smsAlerts": false,
+  "theme": "Enterprise Dark",
+  "apiKey": "xt_live_4492_fa19_8e21_c154"
+}
