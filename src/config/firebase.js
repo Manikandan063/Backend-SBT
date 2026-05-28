@@ -11,7 +11,25 @@ try {
   // Format the private key properly by handling potential escaping issues from environment variables
   const formatPrivateKey = (key) => {
     if (!key) return undefined;
-    return key.replace(/\\n/g, '\n').replace(/"/g, '').trim();
+    
+    // First replace literal \n with newlines and remove surrounding quotes
+    let formatted = key.replace(/\\n/g, '\n').replace(/^"|"$/g, '').trim();
+    
+    // If it's a single line (which often happens when pasting into Render's dashboard)
+    if (formatted.includes('-----BEGIN PRIVATE KEY-----') && !formatted.includes('\n')) {
+      const beginMarker = '-----BEGIN PRIVATE KEY-----';
+      const endMarker = '-----END PRIVATE KEY-----';
+      
+      // Extract just the base64 content
+      let keyContent = formatted.replace(beginMarker, '').replace(endMarker, '').trim();
+      
+      // Replace any spaces in the base64 content with newlines
+      keyContent = keyContent.replace(/ /g, '\n');
+      
+      formatted = `${beginMarker}\n${keyContent}\n${endMarker}`;
+    }
+    
+    return formatted;
   };
 
   const serviceAccount = {

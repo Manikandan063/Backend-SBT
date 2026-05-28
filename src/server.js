@@ -15,7 +15,14 @@ const startServer = async () => {
     await sequelize.sync({ alter: true });
     console.log("✅ Database synced successfully with schema updates");
   } catch (error) {
-    console.error("❌ Database sync failed:", error.message);
+    console.error("❌ Database sync failed with alter:", error.message);
+    try {
+      console.log("⚠️ Falling back to normal sync without alter...");
+      await sequelize.sync({ alter: false });
+      console.log("✅ Database synced without alter");
+    } catch (fallbackError) {
+      console.error("❌ Database fallback sync also failed:", fallbackError.message);
+    }
   }
   
   app.listen(PORT, '0.0.0.0', () => {
