@@ -478,9 +478,9 @@ const getTraccarDataForBus = async (bus) => {
   let traccarDevice = null;
   let traccarPosition = null;
 
-  if (bus.gpsImeiNumber) {
+  if (bus.deviceIdentifier) {
     traccarDevice = await traccarService
-      .findDeviceByUniqueId(bus.gpsImeiNumber)
+      .findDeviceByUniqueId(bus.deviceIdentifier)
       .catch(() => null);
   }
 
@@ -537,7 +537,7 @@ export const getBusLocation = async (idOrDeviceOrMobile) => {
           status: isLive ? 'live' : 'offline',
           gpsProvider: bus.gpsProvider,
           gpsDeviceId: bus.gpsDeviceId,
-          gpsImeiNumber: bus.gpsImeiNumber,
+          deviceIdentifier: bus.deviceIdentifier,
           deviceId: traccarDevice?.id || null,
           schoolId: bus.schoolId,
         };
@@ -569,7 +569,7 @@ export const getBusLocation = async (idOrDeviceOrMobile) => {
         status: isLive ? 'live' : 'offline',
         gpsProvider: bus.gpsProvider || 'INTERNAL',
         gpsDeviceId: bus.gpsDeviceId,
-        gpsImeiNumber: bus.gpsImeiNumber,
+        deviceIdentifier: bus.deviceIdentifier,
         schoolId: bus.schoolId,
       };
     }
@@ -588,7 +588,7 @@ export const getBusLocation = async (idOrDeviceOrMobile) => {
       status: 'offline',
       gpsProvider: bus.gpsProvider || 'INTERNAL',
       gpsDeviceId: bus.gpsDeviceId,
-      gpsImeiNumber: bus.gpsImeiNumber,
+      deviceIdentifier: bus.deviceIdentifier,
       schoolId: bus.schoolId,
     };
   }
@@ -637,7 +637,7 @@ export const getAllFleetLocations = async (schoolId = null) => {
     if (bus.gpsProvider === 'TRACCAR') {
       const device = traccarDevices.find(
         (d) =>
-          String(d.uniqueId) === String(bus.gpsImeiNumber) ||
+          String(d.uniqueId) === String(bus.deviceIdentifier) ||
           String(d.uniqueId) === String(bus.gpsDeviceId) ||
           String(d.id) === String(bus.gpsDeviceId)
       );
@@ -683,7 +683,7 @@ export const getAllFleetLocations = async (schoolId = null) => {
       gpsProvider: bus.gpsProvider,
       routeName: bus.routeName,
       gpsDeviceId: bus.gpsDeviceId,
-      gpsImeiNumber: bus.gpsImeiNumber,
+      deviceIdentifier: bus.deviceIdentifier,
       capacity: bus.capacity,
       schoolId: bus.schoolId,
     };
