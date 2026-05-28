@@ -23,24 +23,26 @@ export const createStudentWithParent = async (data) => {
     }
   });
 
-    // Fetch school name for the notification
-    const school = await School.findByPk(studentData.schoolId);
-    const schoolName = school ? school.schoolName : 'Our School';
+  // Fetch school name for the notification
+  const school = await School.findByPk(studentData.schoolId);
+  const schoolName = school ? school.schoolName : 'Our School';
 
-    let whatsappMessage = '';
+  let whatsappMessage = '';
+  let passwordToSend = '';
 
-    // 2. If parent doesn't exist, create one
-    if (!parent) {
-      const defaultPassword = parentData.mobileNumber.slice(-4);
-      const hashedPassword = await hashPassword(defaultPassword);
-      parent = await Parent.create({
-        ...parentData,
-        schoolId: studentData.schoolId, // Link parent to the same school
-        password: hashedPassword,
-        address: parentData.address || studentData.pickupPoint || 'Not Provided' // Fallback for required address field
-      });
+  // 2. If parent doesn't exist, create one
+  if (!parent) {
+    passwordToSend = parentData.mobileNumber.slice(-4);
+    const hashedPassword = await hashPassword(passwordToSend);
+    parent = await Parent.create({
+      ...parentData,
+      schoolId: studentData.schoolId, // Link parent to the same school
+      password: hashedPassword,
+      address: parentData.address || studentData.pickupPoint || 'Not Provided' // Fallback for required address field
+    });
+    console.log('[STUDENT] Parent created/found');
 
-      whatsappMessage = `
+    whatsappMessage = `
 🌟 *Welcome to ${schoolName}* 🌟
 
 Hello *${parent.parentName}*, 
@@ -51,18 +53,23 @@ Your account for the School Bus Tracking App has been created successfully.
 
 *Login Credentials:*
 📱 Mobile: ${parent.mobileNumber}
-🔑 Password: ${defaultPassword}
+🔑 Password: ${passwordToSend}
 
 *Download App:*
 🔗 https://xtown-bus.app/download
 
 Stay safe and track your child's journey in real-time!
 `;
-      // Send Onboarding Email
-      await sendOnboardingEmail(parent, studentData, schoolName, defaultPassword);
-    } else {
-      // Parent already exists - Send "Student Added" message
-      whatsappMessage = `
+  } else {
+    // Parent already exists
+    if (!parent.schoolId) {
+      parent.schoolId = studentData.schoolId;
+      await parent.save();
+    }
+    console.log('[STUDENT] Parent created/found');
+    
+    passwordToSend = parent.mobileNumber.slice(-4);
+    whatsappMessage = `
 🌟 *Update from ${schoolName}* 🌟
 
 Hello *${parent.parentName}*, 
@@ -76,40 +83,57 @@ You can track their journey using your existing login credentials.
 *Open App:*
 🔗 https://xtown-bus.app/dashboard
 `;
-      // Send Update Email (using last 4 digits as password)
-      const existingPwd = parent.mobileNumber.slice(-4);
-      await sendOnboardingEmail(parent, studentData, schoolName, existingPwd);
+  }
+
+  console.log('\n--- [WHATSAPP NOTIFICATION LOG] ---');
+  console.log(`To: ${parent.mobileNumber}`);
+  console.log(whatsappMessage);
+  console.log('------------------------------------\n');
+
+  // 3. Create Student and link to parentId
+  const student = await Student.create({
+    ...studentData,
+    rollNo: studentData.rollNo || studentData.rollNumber, // Map rollNumber to rollNo
+    gender: studentData.gender || 'Male', // Default to Male if not provided
+    address: studentData.address || studentData.pickupPoint || 'Not Provided', // Fallback for required address field
+    parentId: parent.id
+  });
+
+  console.log('[STUDENT] Student created');
+
+  // 4. Send Onboarding Email (Fire and forget to prevent blocking)
+  try {
+    console.log('[EMAIL] Sending onboarding email to parent email');
+    sendOnboardingEmail(parent, studentData, schoolName, passwordToSend)
+      .then(emailSuccess => {
+        if (emailSuccess) {
+          console.log('[EMAIL] Email sent');
+        } else {
+          console.log('[EMAIL] Email failed');
+        }
+      })
+      .catch(error => {
+        console.log('[EMAIL] Email failed:', error.message);
+      });
+  } catch (error) {
+    console.log('[EMAIL] Email failed:', error.message);
+  }
+
+  // Construct WhatsApp Redirect URL (Free manual method)
+  const encodedMsg = encodeURIComponent(whatsappMessage.trim());
+  const whatsappUrl = `https://wa.me/${parent.mobileNumber}?text=${encodedMsg}`;
+
+  return {
+    student,
+    parent: {
+      id: parent.id,
+      parentName: parent.parentName,
+      email: parent.email,
+      mobileNumber: parent.mobileNumber,
+      whatsappUrl // Return this for the Admin frontend to use
     }
-
-    console.log('\n--- [WHATSAPP NOTIFICATION LOG] ---');
-    console.log(`To: ${parent.mobileNumber}`);
-    console.log(whatsappMessage);
-    console.log('------------------------------------\n');
-
-    // 3. Create Student and link to parentId
-    const student = await Student.create({
-      ...studentData,
-      rollNo: studentData.rollNo || studentData.rollNumber, // Map rollNumber to rollNo
-      gender: studentData.gender || 'Male', // Default to Male if not provided
-      address: studentData.address || studentData.pickupPoint || 'Not Provided', // Fallback for required address field
-      parentId: parent.id
-    });
-
-    // Construct WhatsApp Redirect URL (Free manual method)
-    const encodedMsg = encodeURIComponent(whatsappMessage.trim());
-    const whatsappUrl = `https://wa.me/${parent.mobileNumber}?text=${encodedMsg}`;
-
-    return {
-      student,
-      parent: {
-        id: parent.id,
-        parentName: parent.parentName,
-        email: parent.email,
-        mobileNumber: parent.mobileNumber,
-        whatsappUrl // Return this for the Admin frontend to use
-      }
-    };
   };
+};
 
 export const updateStudent = async (id, updateData) => {
   const student = await Student.findByPk(id);
