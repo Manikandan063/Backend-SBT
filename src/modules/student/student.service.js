@@ -13,7 +13,7 @@ import { sendOnboardingEmail } from '../../shared/utils/mail.service.js';
 export const createStudentWithParent = async (data) => {
   const { parent: parentData, ...studentData } = data;
 
-  // 1. Check if parent already exists
+  // 1. Validate parent data & Find existing parent by email/mobile
   let parent = await Parent.findOne({
     where: {
       [Op.or]: [
@@ -23,14 +23,13 @@ export const createStudentWithParent = async (data) => {
     }
   });
 
-  // Fetch school name for the notification
   const school = await School.findByPk(studentData.schoolId);
   const schoolName = school ? school.schoolName : 'Our School';
 
   let whatsappMessage = '';
   let passwordToSend = '';
 
-  // 2. If parent doesn't exist, create one
+  // 3. If parent not found, create parent.
   if (!parent) {
     passwordToSend = parentData.mobileNumber.slice(-4);
     const hashedPassword = await hashPassword(passwordToSend);
@@ -38,9 +37,9 @@ export const createStudentWithParent = async (data) => {
       ...parentData,
       schoolId: studentData.schoolId, // Link parent to the same school
       password: hashedPassword,
-      address: parentData.address || studentData.pickupPoint || 'Not Provided' // Fallback for required address field
+      address: parentData.address || studentData.pickupPoint || 'Not Provided'
     });
-    console.log('[STUDENT] Parent created/found');
+    console.log('[STUDENT] Parent found/created');
 
     whatsappMessage = `
 🌟 *Welcome to ${schoolName}* 🌟
@@ -61,12 +60,12 @@ Your account for the School Bus Tracking App has been created successfully.
 Stay safe and track your child's journey in real-time!
 `;
   } else {
-    // Parent already exists
+    // 4. If parent exists and schoolId is null, update schoolId to studentData.schoolId.
     if (!parent.schoolId) {
       parent.schoolId = studentData.schoolId;
       await parent.save();
     }
-    console.log('[STUDENT] Parent created/found');
+    console.log('[STUDENT] Parent found/created');
     
     passwordToSend = parent.mobileNumber.slice(-4);
     whatsappMessage = `
@@ -85,25 +84,23 @@ You can track their journey using your existing login credentials.
 `;
   }
 
-  console.log('\n--- [WHATSAPP NOTIFICATION LOG] ---');
-  console.log(`To: ${parent.mobileNumber}`);
-  console.log(whatsappMessage);
-  console.log('------------------------------------\n');
-
-  // 3. Create Student and link to parentId
+  // 5. Create student immediately after parent is ready.
+  // 6. Link student with parentId: parent.id.
   const student = await Student.create({
     ...studentData,
-    rollNo: studentData.rollNo || studentData.rollNumber, // Map rollNumber to rollNo
-    gender: studentData.gender || 'Male', // Default to Male if not provided
-    address: studentData.address || studentData.pickupPoint || 'Not Provided', // Fallback for required address field
+    rollNo: studentData.rollNo || studentData.rollNumber, 
+    gender: studentData.gender || 'Male',
+    address: studentData.address || studentData.pickupPoint || 'Not Provided',
+    pickupPoint: studentData.pickupPoint || 'Not Provided',
     parentId: parent.id
   });
 
   console.log('[STUDENT] Student created');
 
-  // 4. Send Onboarding Email (Fire and forget to prevent blocking)
+  // 7. Only after successful Student.create, send onboarding email.
+  // 8. Wrap email sending in try/catch so email failure does not stop API success.
   try {
-    console.log('[EMAIL] Sending onboarding email to parent email');
+    console.log('[EMAIL] Sending onboarding email');
     sendOnboardingEmail(parent, studentData, schoolName, passwordToSend)
       .then(emailSuccess => {
         if (emailSuccess) {
@@ -119,7 +116,6 @@ You can track their journey using your existing login credentials.
     console.log('[EMAIL] Email failed:', error.message);
   }
 
-  // Construct WhatsApp Redirect URL (Free manual method)
   const encodedMsg = encodeURIComponent(whatsappMessage.trim());
   const whatsappUrl = `https://wa.me/${parent.mobileNumber}?text=${encodedMsg}`;
 
@@ -130,7 +126,7 @@ You can track their journey using your existing login credentials.
       parentName: parent.parentName,
       email: parent.email,
       mobileNumber: parent.mobileNumber,
-      whatsappUrl // Return this for the Admin frontend to use
+      whatsappUrl 
     }
   };
 };
