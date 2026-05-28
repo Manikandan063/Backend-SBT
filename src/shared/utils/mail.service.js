@@ -113,25 +113,40 @@
 //     return false;
 //   }
 // };
-
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
+/**
+ * Gmail SMTP transporter
+ */
 const getTransporter = () => {
   return nodemailer.createTransport({
     host: process.env.MAIL_HOST || 'smtp.gmail.com',
-    port: Number(process.env.MAIL_PORT) || 465,
-    secure: String(process.env.MAIL_SECURE) === 'true' || Number(process.env.MAIL_PORT) === 465,
+    port: Number(process.env.MAIL_PORT) || 587,
+    secure: Number(process.env.MAIL_PORT) === 465,
+
     auth: {
       user: process.env.MAIL_USER,
       pass: process.env.MAIL_PASS,
     },
+
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 10000,
   });
 };
 
-export const sendOnboardingEmail = async (parent, student, schoolName, rawPassword) => {
+/**
+ * Send onboarding email to parent
+ */
+export const sendOnboardingEmail = async (
+  parent,
+  student,
+  schoolName,
+  rawPassword
+) => {
   try {
     if (!process.env.MAIL_USER || !process.env.MAIL_PASS) {
       console.log('[EMAIL] MAIL_USER or MAIL_PASS missing');
@@ -140,28 +155,69 @@ export const sendOnboardingEmail = async (parent, student, schoolName, rawPasswo
 
     const transporter = getTransporter();
 
+    // test SMTP
     await transporter.verify();
+
     console.log('[EMAIL] SMTP connected successfully');
 
-    const baseUrl = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
+    const baseUrl = (
+      process.env.FRONTEND_URL ||
+      'http://localhost:5173'
+    ).replace(/\/$/, '');
 
     const mailOptions = {
-      from: `"${schoolName} Admin" <${process.env.MAIL_FROM || process.env.MAIL_USER}>`,
+      from: `"${schoolName} Admin" <${
+        process.env.MAIL_FROM || process.env.MAIL_USER
+      }>`,
       to: parent.email,
-      subject: `Welcome to ${schoolName} - School Bus Tracking Login Details`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 30px;">
-          <h2>Welcome to ${schoolName}</h2>
-          <p>Hello <strong>${parent.parentName}</strong>,</p>
-          <p>Your child <strong>${student.studentName}</strong> has been registered successfully.</p>
+      subject: `🎒 Welcome to ${schoolName} - School Bus Tracking Login Details`,
 
-          <div style="background:#f5f5f5; padding:20px; border-radius:10px;">
-            <p><strong>Mobile:</strong> ${parent.mobileNumber}</p>
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width:600px; margin:auto; padding:30px;">
+
+          <h2 style="color:#1e3a8a;">
+            Welcome to ${schoolName}
+          </h2>
+
+          <p>Hello <strong>${parent.parentName}</strong>,</p>
+
+          <p>
+            Your child
+            <strong>${student.studentName}</strong>
+            has been registered successfully in School Bus Tracking.
+          </p>
+
+          <div style="
+            background:#f5f5f5;
+            padding:20px;
+            border-radius:10px;
+            margin:20px 0;
+          ">
+            <p><strong>Parent Mobile:</strong> ${parent.mobileNumber}</p>
             <p><strong>Password:</strong> ${rawPassword}</p>
           </div>
 
-          <p>Login here:</p>
-          <a href="${baseUrl}/login">Open Parent Dashboard</a>
+          <p>Open Parent Dashboard:</p>
+
+          <a
+            href="${baseUrl}/login"
+            style="
+              display:inline-block;
+              background:#2563eb;
+              color:#fff;
+              padding:12px 20px;
+              text-decoration:none;
+              border-radius:8px;
+            "
+          >
+            Login Now
+          </a>
+
+          <p style="margin-top:30px;">
+            Thanks,<br/>
+            ${schoolName} Admin
+          </p>
+
         </div>
       `,
     };
@@ -169,6 +225,7 @@ export const sendOnboardingEmail = async (parent, student, schoolName, rawPasswo
     const info = await transporter.sendMail(mailOptions);
 
     console.log('[EMAIL] Onboarding email sent:', info.messageId);
+
     return true;
   } catch (error) {
     console.error('[EMAIL] Sending failed:', {
@@ -177,6 +234,11 @@ export const sendOnboardingEmail = async (parent, student, schoolName, rawPasswo
       command: error.command,
       response: error.response,
     });
+
     return false;
   }
+};
+
+export default {
+  sendOnboardingEmail,
 };
