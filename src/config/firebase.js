@@ -8,13 +8,17 @@ let firebaseAdmin;
 try {
   // Use service account credentials from environment variables or a JSON file
   // For production, it's better to use environment variables
+  // Format the private key properly by handling potential escaping issues from environment variables
+  const formatPrivateKey = (key) => {
+    if (!key) return undefined;
+    return key.replace(/\\n/g, '\n').replace(/"/g, '').trim();
+  };
+
   const serviceAccount = {
     type: process.env.FIREBASE_TYPE,
     project_id: process.env.FIREBASE_PROJECT_ID,
     private_key_id: process.env.FIREBASE_PRIVATE_KEY_ID,
-    private_key: process.env.FIREBASE_PRIVATE_KEY 
-      ? process.env.FIREBASE_PRIVATE_KEY.replace(/^"|"$/g, '').replace(/\\n/g, '\n') 
-      : undefined,
+    private_key: formatPrivateKey(process.env.FIREBASE_PRIVATE_KEY),
     client_email: process.env.FIREBASE_CLIENT_EMAIL,
     client_id: process.env.FIREBASE_CLIENT_ID,
     auth_uri: process.env.FIREBASE_AUTH_URI,

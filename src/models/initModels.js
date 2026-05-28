@@ -27,12 +27,12 @@ const initModels = () => {
   BusTransferLog.belongsTo(Bus, { foreignKey: 'newBusId', as: 'newBus' });
 
   // School - Bus (One to Many)
-  School.hasMany(Bus, { foreignKey: 'schoolId', as: 'buses' });
-  Bus.belongsTo(School, { foreignKey: 'schoolId', as: 'school' });
+  School.hasMany(Bus, { foreignKey: 'schoolId', sourceKey: 'id', as: 'buses' });
+  Bus.belongsTo(School, { foreignKey: 'schoolId', targetKey: 'id', as: 'school' });
 
   // Student - School (Many to One)
-  Student.belongsTo(School, { foreignKey: 'schoolId', as: 'school' });
-  School.hasMany(Student, { foreignKey: 'schoolId', as: 'students' });
+  Student.belongsTo(School, { foreignKey: 'schoolId', targetKey: 'id', as: 'school' });
+  School.hasMany(Student, { foreignKey: 'schoolId', sourceKey: 'id', as: 'students' });
 
   // Bus - BusLiveLocation (One to One)
   Bus.hasOne(BusLiveLocation, { foreignKey: 'busId', as: 'liveLocation' });
@@ -43,8 +43,8 @@ const initModels = () => {
   Bus.hasMany(Student, { foreignKey: 'currentBusId', as: 'students' });
 
   // School - Admin (One to Many)
-  School.hasMany(Admin, { foreignKey: 'schoolId', as: 'admins' });
-  Admin.belongsTo(School, { foreignKey: 'schoolId', as: 'school' });
+  School.hasMany(Admin, { foreignKey: 'schoolId', sourceKey: 'id', as: 'admins' });
+  Admin.belongsTo(School, { foreignKey: 'schoolId', targetKey: 'id', as: 'school' });
 
   // Parent - DismissedNotification (One to Many)
   Parent.hasMany(DismissedNotification, { foreignKey: 'parentId', as: 'dismissedNotifications' });
