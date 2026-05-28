@@ -12,24 +12,34 @@ try {
   const formatPrivateKey = (key) => {
     if (!key) return undefined;
     
-    // First replace literal \n with newlines and remove surrounding quotes
-    let formatted = key.replace(/\\n/g, '\n').replace(/^"|"$/g, '').trim();
-    
-    // If it's a single line (which often happens when pasting into Render's dashboard)
-    if (formatted.includes('-----BEGIN PRIVATE KEY-----') && !formatted.includes('\n')) {
-      const beginMarker = '-----BEGIN PRIVATE KEY-----';
-      const endMarker = '-----END PRIVATE KEY-----';
+    try {
+      // 1. Remove surrounding quotes if they exist
+      let formatted = key.replace(/^"|"$/g, '').trim();
       
-      // Extract just the base64 content
-      let keyContent = formatted.replace(beginMarker, '').replace(endMarker, '').trim();
+      // 2. Replace literal string "\n" with actual newline character
+      formatted = formatted.replace(/\\n/g, '\n');
       
-      // Replace any spaces in the base64 content with newlines
-      keyContent = keyContent.replace(/ /g, '\n');
+      // 3. Handle single-line strings with spaces instead of newlines
+      // (This is common when environment variables are pasted incorrectly)
+      if (formatted.includes('-----BEGIN PRIVATE KEY-----') && !formatted.includes('\n')) {
+         // Extract the base64 string by removing headers and any extra spaces
+         let base64Part = formatted
+           .replace('-----BEGIN PRIVATE KEY-----', '')
+           .replace('-----END PRIVATE KEY-----', '')
+           .replace(/\s+/g, ''); // Remove all spaces and whitespace
+           
+         // Break into chunks of 64 characters (standard PEM format)
+         const chunks = base64Part.match(/.{1,64}/g);
+         if (chunks) {
+           formatted = `-----BEGIN PRIVATE KEY-----\n${chunks.join('\n')}\n-----END PRIVATE KEY-----`;
+         }
+      }
       
-      formatted = `${beginMarker}\n${keyContent}\n${endMarker}`;
+      return formatted;
+    } catch (err) {
+      console.error("Error formatting private key:", err.message);
+      return key;
     }
-    
-    return formatted;
   };
 
   const serviceAccount = {
