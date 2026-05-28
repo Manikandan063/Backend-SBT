@@ -336,7 +336,6 @@
 //   });
 // };
 
-
 import BusLiveLocation from './tracking.model.js';
 import { Bus } from '../bus/bus.model.js';
 import { AppError } from '../../shared/errorHandling/errorHandler.js';
@@ -478,22 +477,44 @@ const getTraccarDataForBus = async (bus) => {
   let traccarDevice = null;
   let traccarPosition = null;
 
+  console.log('[Traccar Debug] Bus:', {
+    busNumber: bus.busNumber,
+    gpsDeviceId: bus.gpsDeviceId,
+    deviceIdentifier: bus.deviceIdentifier,
+    gpsProvider: bus.gpsProvider,
+  });
+
   if (bus.deviceIdentifier) {
     traccarDevice = await traccarService
       .findDeviceByUniqueId(bus.deviceIdentifier)
-      .catch(() => null);
+      .catch((err) => {
+        console.error('[Traccar Debug] IMEI/deviceIdentifier search error:', err.message);
+        return null;
+      });
+
+    console.log('[Traccar Debug] Device by deviceIdentifier:', traccarDevice);
   }
 
   if (!traccarDevice && bus.gpsDeviceId) {
     traccarDevice = await traccarService
       .findDeviceByUniqueId(bus.gpsDeviceId)
-      .catch(() => null);
+      .catch((err) => {
+        console.error('[Traccar Debug] gpsDeviceId search error:', err.message);
+        return null;
+      });
+
+    console.log('[Traccar Debug] Device by gpsDeviceId:', traccarDevice);
   }
 
   if (traccarDevice?.id) {
     traccarPosition = await traccarService
       .getDevicePosition(traccarDevice.id)
-      .catch(() => null);
+      .catch((err) => {
+        console.error('[Traccar Debug] Position fetch error:', err.message);
+        return null;
+      });
+
+    console.log('[Traccar Debug] Position:', traccarPosition);
   }
 
   return { traccarDevice, traccarPosition };
@@ -538,7 +559,8 @@ export const getBusLocation = async (idOrDeviceOrMobile) => {
           gpsProvider: bus.gpsProvider,
           gpsDeviceId: bus.gpsDeviceId,
           deviceIdentifier: bus.deviceIdentifier,
-          deviceId: traccarDevice?.id || null,
+          traccarInternalDeviceId: traccarDevice?.id || null,
+          traccarDeviceStatus: traccarDevice?.status || null,
           schoolId: bus.schoolId,
         };
       }
@@ -576,6 +598,14 @@ export const getBusLocation = async (idOrDeviceOrMobile) => {
   }
 
   if (!trackingData) {
+    console.warn('[Tracking] Real-time data missing:', {
+      busId: bus.id,
+      busNumber: bus.busNumber,
+      gpsDeviceId: bus.gpsDeviceId,
+      deviceIdentifier: bus.deviceIdentifier,
+      gpsProvider: bus.gpsProvider,
+    });
+
     return {
       busId: bus.id,
       busNumber: bus.busNumber,
@@ -633,6 +663,7 @@ export const getAllFleetLocations = async (schoolId = null) => {
       : null;
 
     let deviceStatus = 'offline';
+    let traccarInternalDeviceId = null;
 
     if (bus.gpsProvider === 'TRACCAR') {
       const device = traccarDevices.find(
@@ -644,6 +675,7 @@ export const getAllFleetLocations = async (schoolId = null) => {
 
       if (device) {
         deviceStatus = device.status;
+        traccarInternalDeviceId = device.id;
 
         const traccarPos = traccarPositions.find(
           (p) => String(p.deviceId) === String(device.id)
@@ -684,6 +716,8 @@ export const getAllFleetLocations = async (schoolId = null) => {
       routeName: bus.routeName,
       gpsDeviceId: bus.gpsDeviceId,
       deviceIdentifier: bus.deviceIdentifier,
+      traccarInternalDeviceId,
+      traccarDeviceStatus: deviceStatus,
       capacity: bus.capacity,
       schoolId: bus.schoolId,
     };
