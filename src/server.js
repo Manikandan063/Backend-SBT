@@ -11,18 +11,11 @@ const startServer = async () => {
   initModels();
   
   try {
-    // Re-enabled alter: true to sync new fields (boardType, etc)
-    await sequelize.sync({ alter: true });
-    console.log("✅ Database synced successfully with schema updates");
+    // Normal sync for production (avoids dropping tables or failing on unique constraints)
+    await sequelize.sync({ alter: false });
+    console.log("✅ Database synced successfully without alter");
   } catch (error) {
-    console.error("❌ Database sync failed with alter:", error.message);
-    try {
-      console.log("⚠️ Falling back to normal sync without alter...");
-      await sequelize.sync({ alter: false });
-      console.log("✅ Database synced without alter");
-    } catch (fallbackError) {
-      console.error("❌ Database fallback sync also failed:", fallbackError.message);
-    }
+    console.error("❌ Database sync failed:", error.message);
   }
   
   app.listen(PORT, '0.0.0.0', () => {
