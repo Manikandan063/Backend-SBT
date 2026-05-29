@@ -177,7 +177,16 @@ export const uploadPhoto = async (req, res, next) => {
       });
     }
 
-    const photoUrl = `/uploads/students/${req.file.filename}`;
+    let photoUrl = '';
+    
+    if (req.file.path && req.file.path.startsWith('http')) {
+      photoUrl = req.file.path;
+      console.log('[UPLOAD] Cloudinary upload success');
+    } else {
+      photoUrl = `/uploads/students/${req.file.filename}`;
+      console.log('[UPLOAD] Local upload success');
+    }
+
     const student = await studentService.updateStudentPhoto(req.params.id, photoUrl);
 
     res.status(200).json({
@@ -186,6 +195,7 @@ export const uploadPhoto = async (req, res, next) => {
       data: student
     });
   } catch (error) {
+    console.error('[UPLOAD] Cloudinary upload failed', error);
     next(error);
   }
 };
