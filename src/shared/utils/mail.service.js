@@ -59,6 +59,16 @@ export const sendOnboardingEmail = async (
             Login Now
           </a>
 
+          ${process.env.APK_DOWNLOAD_URL ? `
+          <div style="margin-top:20px;">
+            <p>Download Parent App:</p>
+            <a href="${process.env.APK_DOWNLOAD_URL}"
+               style="display:inline-block; background:#16a34a; color:#fff; padding:12px 20px; text-decoration:none; border-radius:8px; margin-top:12px;">
+              📲 Download Parent App
+            </a>
+          </div>
+          ` : ''}
+
           <p style="margin-top:30px;">
             Thanks,<br/>
             ${schoolName} Admin
