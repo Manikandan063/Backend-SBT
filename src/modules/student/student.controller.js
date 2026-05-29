@@ -1,6 +1,7 @@
 import * as studentService from './student.service.js';
 import { createStudentSchema, updateStudentSchema } from './student.schema.js';
 import School from '../school/school.model.js';
+import cloudinary from '../../config/cloudinary.js';
 
 export const create = async (req, res, next) => {
   try {
@@ -179,9 +180,24 @@ export const uploadPhoto = async (req, res, next) => {
 
     let photoUrl = '';
     
-    if (req.file.path && req.file.path.startsWith('http')) {
-      photoUrl = req.file.path;
-      console.log('[UPLOAD] Cloudinary upload success');
+    if (process.env.CLOUDINARY_CLOUD_NAME && req.file.buffer) {
+      try {
+        const result = await new Promise((resolve, reject) => {
+          const uploadStream = cloudinary.uploader.upload_stream(
+            { folder: 'school_bus_students' },
+            (error, result) => {
+              if (error) return reject(error);
+              resolve(result);
+            }
+          );
+          uploadStream.end(req.file.buffer);
+        });
+        photoUrl = result.secure_url;
+        console.log('[UPLOAD] Cloudinary upload success');
+      } catch (err) {
+        console.error('[UPLOAD] Cloudinary upload failed', err);
+        throw err;
+      }
     } else {
       photoUrl = `/uploads/students/${req.file.filename}`;
       console.log('[UPLOAD] Local upload success');

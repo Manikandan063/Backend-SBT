@@ -1,8 +1,6 @@
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import cloudinary from '../config/cloudinary.js';
-import { CloudinaryStorage } from 'multer-storage-cloudinary';
 
 // Ensure uploads directory exists for fallback
 const uploadDir = 'uploads/students';
@@ -20,13 +18,7 @@ const diskStorage = multer.diskStorage({
   }
 });
 
-const cloudStorage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: {
-    folder: 'school_bus_students',
-    allowed_formats: ['jpeg', 'png', 'jpg', 'webp'],
-  }
-});
+const memoryStorage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
   const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
@@ -37,11 +29,11 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-const storage = process.env.CLOUDINARY_CLOUD_NAME ? cloudStorage : diskStorage;
+const storage = process.env.CLOUDINARY_CLOUD_NAME ? memoryStorage : diskStorage;
 
 export const uploadStudentPhoto = multer({
   storage: storage,
-  fileFilter: process.env.CLOUDINARY_CLOUD_NAME ? undefined : fileFilter,
+  fileFilter: fileFilter,
   limits: {
     fileSize: 5 * 1024 * 1024 // 5MB limit
   }
