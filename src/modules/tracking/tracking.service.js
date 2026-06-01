@@ -553,6 +553,9 @@ export const getBusLocation = async (idOrDeviceOrMobile) => {
           latitude: traccarPosition.latitude,
           longitude: traccarPosition.longitude,
           speed: isLive ? traccarPosition.speed || 0 : 0,
+          course: traccarPosition.course || 0,
+          heading: traccarPosition.course || 0,
+          accuracy: traccarPosition.accuracy || 0,
           trackingStatus: isLive ? 'LIVE' : 'OFFLINE',
           lastUpdated: fixTime,
           status: isLive ? 'live' : 'offline',
@@ -586,6 +589,9 @@ export const getBusLocation = async (idOrDeviceOrMobile) => {
         latitude: localLocation.latitude,
         longitude: localLocation.longitude,
         speed: isLive ? localLocation.speed || 0 : 0,
+        course: localLocation.course || 0,
+        heading: localLocation.course || 0,
+        accuracy: localLocation.accuracy || 0,
         trackingStatus: isLive ? 'LIVE' : 'OFFLINE',
         lastUpdated: localLocation.timestamp,
         status: isLive ? 'live' : 'offline',
@@ -613,6 +619,9 @@ export const getBusLocation = async (idOrDeviceOrMobile) => {
       latitude: null,
       longitude: null,
       speed: 0,
+      course: 0,
+      heading: 0,
+      accuracy: 0,
       trackingStatus: 'OFFLINE',
       lastUpdated: null,
       status: 'offline',
@@ -658,6 +667,8 @@ export const getAllFleetLocations = async (schoolId = null) => {
     let currentLat = bus.liveLocation?.latitude || null;
     let currentLng = bus.liveLocation?.longitude || null;
     let currentSpeed = bus.liveLocation?.speed || 0;
+    let currentCourse = bus.liveLocation?.course || 0;
+    let currentAccuracy = bus.liveLocation?.accuracy || 0;
     let lastUpdate = bus.liveLocation?.timestamp
       ? new Date(bus.liveLocation.timestamp)
       : null;
@@ -685,6 +696,8 @@ export const getAllFleetLocations = async (schoolId = null) => {
           currentLat = traccarPos.latitude;
           currentLng = traccarPos.longitude;
           currentSpeed = traccarPos.speed || 0;
+          currentCourse = traccarPos.course || 0;
+          currentAccuracy = traccarPos.accuracy || 0;
           lastUpdate = new Date(
             traccarPos.serverTime || traccarPos.fixTime || traccarPos.deviceTime
           );
@@ -710,6 +723,9 @@ export const getAllFleetLocations = async (schoolId = null) => {
       latitude: currentLat,
       longitude: currentLng,
       speed: isLive ? currentSpeed : 0,
+      course: currentCourse,
+      heading: currentCourse,
+      accuracy: currentAccuracy,
       trackingStatus: isLive ? 'LIVE' : 'OFFLINE',
       lastUpdated: lastUpdate,
       gpsProvider: bus.gpsProvider,
