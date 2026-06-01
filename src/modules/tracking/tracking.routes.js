@@ -22,4 +22,11 @@ router.get('/:busId', authMiddleware, trackingController.getBusLocation);
 
 router.get('/fleet/status', authMiddleware, trackingController.getAllFleetLocations);
 
+/**
+ * @route   GET /api/tracking/snap
+ * @desc    Proxy Google Roads API to bypass HTTP referer restrictions
+ * @access  Private
+ */
+router.get('/snap', authMiddleware, trackingController.snapToRoads);
+
 export default router;

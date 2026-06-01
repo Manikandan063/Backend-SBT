@@ -1,4 +1,5 @@
 import admin from '../config/firebase.js';
+import Parent from '../modules/parent/parent.model.js';
 
 /**
  * Send a push notification to a specific device token
@@ -36,7 +37,12 @@ export const sendPushNotification = async (fcmToken, title, body, data = {}) => 
     // Handle specific FCM errors (e.g., token expired)
     if (error.code === 'messaging/invalid-registration-token' || 
         error.code === 'messaging/registration-token-not-registered') {
-      console.warn('[Notification] FCM token is no longer valid. User should re-register.');
+      console.warn('[Notification] FCM token is no longer valid. Removing token.');
+      try {
+        await Parent.update({ fcmToken: null }, { where: { fcmToken } });
+      } catch (dbErr) {
+        console.error('[Notification] Error clearing invalid token from DB:', dbErr.message);
+      }
     }
     
     return null;

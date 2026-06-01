@@ -28,6 +28,30 @@ const sendFCMNotification = async (tokens, title, body, data = {}) => {
 
     const response = await admin.messaging().sendMulticast(message);
     console.log(`[FCM] Successfully sent ${response.successCount} messages`);
+
+    if (response.failureCount > 0) {
+      const failedTokens = [];
+      response.responses.forEach((resp, idx) => {
+        if (!resp.success) {
+          const errorCode = resp.error?.code;
+          if (
+            errorCode === 'messaging/invalid-registration-token' ||
+            errorCode === 'messaging/registration-token-not-registered'
+          ) {
+            failedTokens.push(validTokens[idx]);
+          }
+        }
+      });
+
+      if (failedTokens.length > 0) {
+        console.warn(`[FCM] Removing ${failedTokens.length} invalid tokens.`);
+        await Parent.update(
+          { fcmToken: null },
+          { where: { fcmToken: { [Op.in]: failedTokens } } }
+        );
+      }
+    }
+
     return response.successCount;
   } catch (error) {
     console.error('[FCM] Error sending multicast message:', error);
