@@ -45,6 +45,9 @@ export const getIO = () => {
  */
 export const emitBusLocation = (busId, locationData) => {
   if (io) {
+    console.log(`📍 Emitting locationUpdate for busId: ${busId}`);
     io.to(busId).emit('locationUpdate', locationData);
+  } else {
+    console.warn(`⚠️ Socket.io not initialized. Cannot emit locationUpdate for busId: ${busId}`);
   }
 };
