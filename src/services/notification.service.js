@@ -20,6 +20,19 @@ export const sendPushNotification = async (fcmToken, title, body, data = {}) => 
       title,
       body,
     },
+    android: {
+      notification: {
+        sound: 'default',
+        channelId: 'default', // Highly recommended for Android 8.0+
+      },
+    },
+    apns: {
+      payload: {
+        aps: {
+          sound: 'default',
+        },
+      },
+    },
     data: {
       ...data,
       click_action: 'FLUTTER_NOTIFICATION_CLICK', // Standard for many clients
