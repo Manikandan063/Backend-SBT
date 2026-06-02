@@ -51,7 +51,7 @@ app.get('/', (req, res) => {
 // Register Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/parents', parentRoutes);
-app.use('/api/parent', parentRoutes); // Alias for singular parent endpoint compatibility
+app.use('/api/parent', parentRoutes); // Karthi for ondipudur parent endpoint compatibility
 app.use('/api/students', studentRoutes);
 app.use('/api/tracking', trackingRoutes);
 app.use('/api/transfer', transferRoutes);
