@@ -340,6 +340,7 @@ import BusLiveLocation from './tracking.model.js';
 import { Bus } from '../bus/bus.model.js';
 import { AppError } from '../../shared/errorHandling/errorHandler.js';
 import traccarService from './traccar.service.js';
+import { emitBusLocation } from '../../shared/socket/socket.js';
 
 export const updateLiveLocation = async (locationData) => {
   const {
@@ -389,6 +390,23 @@ export const updateLiveLocation = async (locationData) => {
   checkAndNotifyParents(bus.id, latitude, longitude).catch((err) =>
     console.error('[Notification] Proximity check failed:', err.message)
   );
+
+  // Emit real-time location to all joined sockets (parents tracking this bus)
+  try {
+    emitBusLocation(bus.id.toString(), {
+      busId: bus.id,
+      busNumber: bus.busNumber,
+      gpsDeviceId: gpsDeviceId || bus.gpsDeviceId,
+      latitude,
+      longitude,
+      speed: speed || 0,
+      trackingStatus: 'LIVE',
+      status: 'live',
+      lastUpdated: liveLocation.timestamp
+    });
+  } catch (emitError) {
+    console.error('[Socket] Failed to emit bus location:', emitError.message);
+  }
 
   return liveLocation;
 };

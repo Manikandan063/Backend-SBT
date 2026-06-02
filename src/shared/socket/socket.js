@@ -5,7 +5,13 @@ let io;
 export const initSocket = (server) => {
   io = new Server(server, {
     cors: {
-      origin: '*', // Adjust this in production
+      origin: [
+        'http://localhost:5173', 
+        'http://localhost:5174', 
+        'https://frontend-sbt.vercel.app',
+        'http://localhost',
+        'capacitor://localhost'
+      ],
       methods: ['GET', 'POST']
     }
   });
@@ -14,7 +20,7 @@ export const initSocket = (server) => {
     console.log(`🔌 New client connected: ${socket.id}`);
 
     // Join a specific bus room for live tracking
-    socket.on('joinBus', (busId) => {
+    socket.on('joinBusRoom', (busId) => {
       socket.join(busId);
       console.log(`📱 Socket ${socket.id} joined room: ${busId}`);
     });
