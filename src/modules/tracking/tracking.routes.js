@@ -12,14 +12,6 @@ const router = express.Router();
 router.post('/live-location', trackingController.updateLiveLocation);
 router.post('/update-location', trackingController.updateLiveLocation);
 
-/**
- * @route   GET /api/tracking/:busId
- * @desc    Get current location of a specific bus
- * @access  Private
- */
-router.get('/live-location/:busId', authMiddleware, trackingController.getBusLocation);
-router.get('/:busId', authMiddleware, trackingController.getBusLocation);
-
 router.get('/fleet/status', authMiddleware, trackingController.getAllFleetLocations);
 
 /**
@@ -28,5 +20,13 @@ router.get('/fleet/status', authMiddleware, trackingController.getAllFleetLocati
  * @access  Private
  */
 router.get('/snap', authMiddleware, trackingController.snapToRoads);
+
+/**
+ * @route   GET /api/tracking/:busId
+ * @desc    Get current location of a specific bus
+ * @access  Private
+ */
+router.get('/live-location/:busId', authMiddleware, trackingController.getBusLocation);
+router.get('/:busId', authMiddleware, trackingController.getBusLocation);
 
 export default router;

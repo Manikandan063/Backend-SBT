@@ -542,9 +542,16 @@ export const getBusLocation = async (idOrDeviceOrMobile) => {
         const fixTime = new Date(lastUpdateTime);
         const diffInSeconds = Math.floor((new Date() - fixTime) / 1000);
 
-        const isLive =
-          traccarDevice?.status === 'online' ||
-          (diffInSeconds >= 0 && diffInSeconds <= 300);
+        let currentTrackingStatus = 'OFFLINE';
+        if (diffInSeconds >= 0 && diffInSeconds <= 60) {
+          currentTrackingStatus = 'LIVE';
+        } else if (diffInSeconds > 60 && diffInSeconds <= 300) {
+          currentTrackingStatus = 'DELAYED';
+        } else {
+          currentTrackingStatus = 'OFFLINE';
+        }
+
+        const isLive = currentTrackingStatus === 'LIVE' || currentTrackingStatus === 'DELAYED';
 
         trackingData = {
           busId: bus.id,
@@ -556,14 +563,16 @@ export const getBusLocation = async (idOrDeviceOrMobile) => {
           course: traccarPosition.course || 0,
           heading: traccarPosition.course || 0,
           accuracy: traccarPosition.accuracy || 0,
-          trackingStatus: isLive ? 'LIVE' : 'OFFLINE',
+          trackingStatus: currentTrackingStatus,
           lastUpdated: fixTime,
+          gpsAge: diffInSeconds,
           status: isLive ? 'live' : 'offline',
           gpsProvider: bus.gpsProvider,
           gpsDeviceId: bus.gpsDeviceId,
           deviceIdentifier: bus.deviceIdentifier,
           traccarInternalDeviceId: traccarDevice?.id || null,
           traccarDeviceStatus: traccarDevice?.status || null,
+          deviceStatus: traccarDevice?.status || 'unknown',
           schoolId: bus.schoolId,
         };
       }
@@ -580,7 +589,17 @@ export const getBusLocation = async (idOrDeviceOrMobile) => {
     if (localLocation) {
       const lastUpdateTime = new Date(localLocation.timestamp);
       const diffInSeconds = Math.floor((new Date() - lastUpdateTime) / 1000);
-      const isLive = diffInSeconds >= 0 && diffInSeconds <= 300;
+      
+      let currentTrackingStatus = 'OFFLINE';
+      if (diffInSeconds >= 0 && diffInSeconds <= 60) {
+        currentTrackingStatus = 'LIVE';
+      } else if (diffInSeconds > 60 && diffInSeconds <= 300) {
+        currentTrackingStatus = 'DELAYED';
+      } else {
+        currentTrackingStatus = 'OFFLINE';
+      }
+
+      const isLive = currentTrackingStatus === 'LIVE' || currentTrackingStatus === 'DELAYED';
 
       trackingData = {
         busId: bus.id,
@@ -592,12 +611,14 @@ export const getBusLocation = async (idOrDeviceOrMobile) => {
         course: localLocation.course || 0,
         heading: localLocation.course || 0,
         accuracy: localLocation.accuracy || 0,
-        trackingStatus: isLive ? 'LIVE' : 'OFFLINE',
+        trackingStatus: currentTrackingStatus,
         lastUpdated: localLocation.timestamp,
+        gpsAge: diffInSeconds,
         status: isLive ? 'live' : 'offline',
         gpsProvider: bus.gpsProvider || 'INTERNAL',
         gpsDeviceId: bus.gpsDeviceId,
         deviceIdentifier: bus.deviceIdentifier,
+        deviceStatus: 'unknown',
         schoolId: bus.schoolId,
       };
     }
@@ -624,10 +645,12 @@ export const getBusLocation = async (idOrDeviceOrMobile) => {
       accuracy: 0,
       trackingStatus: 'OFFLINE',
       lastUpdated: null,
+      gpsAge: null,
       status: 'offline',
       gpsProvider: bus.gpsProvider || 'INTERNAL',
       gpsDeviceId: bus.gpsDeviceId,
       deviceIdentifier: bus.deviceIdentifier,
+      deviceStatus: 'unknown',
       schoolId: bus.schoolId,
     };
   }
@@ -709,9 +732,16 @@ export const getAllFleetLocations = async (schoolId = null) => {
       ? Math.floor((new Date() - lastUpdate) / 1000)
       : null;
 
-    const isLive =
-      deviceStatus === 'online' ||
-      (diffInSeconds !== null && diffInSeconds >= 0 && diffInSeconds <= 300);
+    let currentTrackingStatus = 'OFFLINE';
+    if (diffInSeconds !== null && diffInSeconds >= 0 && diffInSeconds <= 60) {
+      currentTrackingStatus = 'LIVE';
+    } else if (diffInSeconds !== null && diffInSeconds > 60 && diffInSeconds <= 300) {
+      currentTrackingStatus = 'DELAYED';
+    } else {
+      currentTrackingStatus = 'OFFLINE';
+    }
+
+    const isLive = currentTrackingStatus === 'LIVE' || currentTrackingStatus === 'DELAYED';
 
     return {
       id: bus.id,
@@ -726,14 +756,16 @@ export const getAllFleetLocations = async (schoolId = null) => {
       course: currentCourse,
       heading: currentCourse,
       accuracy: currentAccuracy,
-      trackingStatus: isLive ? 'LIVE' : 'OFFLINE',
+      trackingStatus: currentTrackingStatus,
       lastUpdated: lastUpdate,
+      gpsAge: diffInSeconds,
       gpsProvider: bus.gpsProvider,
       routeName: bus.routeName,
       gpsDeviceId: bus.gpsDeviceId,
       deviceIdentifier: bus.deviceIdentifier,
       traccarInternalDeviceId,
       traccarDeviceStatus: deviceStatus,
+      deviceStatus: deviceStatus,
       capacity: bus.capacity,
       schoolId: bus.schoolId,
     };

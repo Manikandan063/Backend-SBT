@@ -21,7 +21,7 @@ const DismissedNotification = sequelize.define('DismissedNotification', {
   indexes: [
     {
       unique: true,
-      fields: ['parent_id', 'notification_id']
+      fields: ['parentId', 'notificationId']
     }
   ]
 });
