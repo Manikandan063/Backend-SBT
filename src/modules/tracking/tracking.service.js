@@ -651,7 +651,7 @@ export const getBusLocation = async (idOrDeviceOrMobile) => {
       gpsProvider: bus.gpsProvider,
     });
 
-    return {
+    trackingData = {
       busId: bus.id,
       busNumber: bus.busNumber,
       busRegisterNumber: bus.busRegisterNumber,
@@ -671,6 +671,16 @@ export const getBusLocation = async (idOrDeviceOrMobile) => {
       deviceStatus: 'unknown',
       schoolId: bus.schoolId,
     };
+  } else {
+    // If we successfully fetched real-time tracking data (e.g. from Traccar),
+    // broadcast it over Socket.io so any connected clients get the update!
+    try {
+      if (trackingData.latitude && trackingData.longitude) {
+        emitBusLocation(bus.id.toString(), trackingData);
+      }
+    } catch (err) {
+      console.error('[Socket] Failed to broadcast from getBusLocation:', err.message);
+    }
   }
 
   return trackingData;
@@ -759,9 +769,7 @@ export const getAllFleetLocations = async (schoolId = null) => {
       currentTrackingStatus = 'OFFLINE';
     }
 
-    const isLive = currentTrackingStatus === 'LIVE' || currentTrackingStatus === 'DELAYED';
-
-    return {
+    const result = {
       id: bus.id,
       busNumber: bus.busNumber,
       busRegisterNumber: bus.busRegisterNumber,
@@ -787,5 +795,16 @@ export const getAllFleetLocations = async (schoolId = null) => {
       capacity: bus.capacity,
       schoolId: bus.schoolId,
     };
+
+    // Broadcast this location update to any parents listening in this bus's socket room
+    try {
+      if (result.latitude && result.longitude) {
+        emitBusLocation(bus.id.toString(), result);
+      }
+    } catch (err) {
+      console.error('[Socket] Failed to broadcast from fleet locations:', err.message);
+    }
+
+    return result;
   });
 };
