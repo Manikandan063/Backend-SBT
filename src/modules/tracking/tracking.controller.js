@@ -29,11 +29,24 @@ export const getBusLocation = async (req, res, next) => {
 
     // Ownership check for all restricted roles (Default-Deny)
     if (userRole !== 'superadmin') {
-      if (!req.user.schoolId || location.schoolId !== req.user.schoolId) {
-        return res.status(403).json({
-          status: 'fail',
-          message: 'Permission Denied: You do not have authority to track this bus.'
+      if (userRole === 'parent') {
+        const { default: Student } = await import('../student/student.model.js');
+        const childExists = await Student.findOne({ 
+          where: { parentId: req.user.id, currentBusId: location.busId } 
         });
+        if (!childExists) {
+          return res.status(403).json({
+            status: 'fail',
+            message: 'Permission Denied: You do not have a child on this bus.'
+          });
+        }
+      } else {
+        if (!req.user.schoolId || location.schoolId !== req.user.schoolId) {
+          return res.status(403).json({
+            status: 'fail',
+            message: 'Permission Denied: You do not have authority to track this bus.'
+          });
+        }
       }
     }
 
