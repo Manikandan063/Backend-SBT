@@ -26,6 +26,7 @@ export const sequelize = process.env.DATABASE_URL
       logging: false,
       define: {
         timestamps: true,
+        underscored: true,
       },
       // Automatically enable SSL for external Render databases
       ...(process.env.DATABASE_URL.includes("render.com") && {
@@ -47,6 +48,7 @@ export const sequelize = process.env.DATABASE_URL
       logging: false,
       define: {
         timestamps: true,
+        underscored: true,
       }
     });
 
