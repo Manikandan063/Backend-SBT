@@ -769,6 +769,8 @@ export const getAllFleetLocations = async (schoolId = null) => {
       currentTrackingStatus = 'OFFLINE';
     }
 
+    const isLive = currentTrackingStatus === 'LIVE' || currentTrackingStatus === 'DELAYED';
+
     const result = {
       id: bus.id,
       busNumber: bus.busNumber,
