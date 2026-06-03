@@ -1,4 +1,4 @@
-import axios from 'axios';
+import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -10,13 +10,13 @@ export const sendOnboardingEmail = async (
   rawPassword
 ) => {
   try {
-    if (!process.env.BREVO_API_KEY) {
-      console.log('[EMAIL] BREVO_API_KEY missing');
+    if (!parent.email) {
+      console.log('[EMAIL] Parent email is missing. Skipping email dispatch.');
       return false;
     }
 
-    if (!process.env.MAIL_FROM) {
-      console.log('[EMAIL] MAIL_FROM missing');
+    if (!process.env.MAIL_USER || !process.env.MAIL_PASS) {
+      console.log('[EMAIL] SMTP credentials missing');
       return false;
     }
 
@@ -24,19 +24,21 @@ export const sendOnboardingEmail = async (
       process.env.FRONTEND_URL || 'http://localhost:5173'
     ).replace(/\/$/, '');
 
-    const payload = {
-      sender: {
-        name: `${schoolName} Admin`,
-        email: process.env.MAIL_FROM,
+    const transporter = nodemailer.createTransport({
+      host: process.env.MAIL_HOST || 'smtp.gmail.com',
+      port: process.env.MAIL_PORT || 465,
+      secure: true, // true for 465, false for other ports
+      auth: {
+        user: process.env.MAIL_USER,
+        pass: process.env.MAIL_PASS,
       },
-      to: [
-        {
-          email: parent.email,
-          name: parent.parentName,
-        },
-      ],
+    });
+
+    const mailOptions = {
+      from: `"${schoolName} Admin" <${process.env.MAIL_FROM || process.env.MAIL_USER}>`,
+      to: parent.email,
       subject: `🎒 Welcome to ${schoolName} - School Bus Tracking Login Details`,
-      htmlContent: `
+      html: `
         <div style="font-family: Arial, sans-serif; max-width:600px; margin:auto; padding:30px;">
           <h2 style="color:#1e3a8a;">Welcome to ${schoolName}</h2>
 
@@ -77,28 +79,12 @@ export const sendOnboardingEmail = async (
       `,
     };
 
-    const response = await axios.post(
-      'https://api.brevo.com/v3/smtp/email',
-      payload,
-      {
-        headers: {
-          accept: 'application/json',
-          'content-type': 'application/json',
-          'api-key': process.env.BREVO_API_KEY,
-        },
-      }
-    );
-
-    console.log('[EMAIL] Brevo API email sent:', response.data);
+    const info = await transporter.sendMail(mailOptions);
+    console.log('[EMAIL] Nodemailer email sent:', info.messageId);
 
     return true;
   } catch (error) {
-    console.error('[EMAIL] Brevo API failed:', {
-      message: error.message,
-      status: error.response?.status,
-      data: error.response?.data,
-    });
-
+    console.error('[EMAIL] Nodemailer failed:', error.message);
     return false;
   }
 };

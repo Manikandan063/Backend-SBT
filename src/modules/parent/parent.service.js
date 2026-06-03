@@ -193,16 +193,13 @@ export const updateFcmToken = async (id, fcmToken) => {
  * Get all parents (Admin)
  */
 export const getAllParents = async (schoolId = null) => {
-  const where = {};
   const studentWhere = {};
   
   if (schoolId) {
-    where.schoolId = schoolId;
     studentWhere.schoolId = schoolId;
   }
 
   const results = await Parent.findAll({
-    where,
     attributes: { exclude: ['password'] },
     include: [
       {
@@ -210,7 +207,7 @@ export const getAllParents = async (schoolId = null) => {
         as: 'children',
         attributes: ['id', 'studentName', 'class', 'section', 'rollNo', 'schoolId'],
         where: Object.keys(studentWhere).length > 0 ? studentWhere : undefined,
-        required: false // Keep parent even if some children logic is complex, but the top level 'where' already filters the parent
+        required: schoolId ? true : false
       }
     ]
   });

@@ -14,14 +14,22 @@ export const createStudentWithParent = async (data) => {
   const { parent: parentData, ...studentData } = data;
 
   // 1. Validate parent data & Find existing parent by email/mobile
-  let parent = await Parent.findOne({
-    where: {
-      [Op.or]: [
-        { email: parentData.email },
-        { mobileNumber: parentData.mobileNumber }
-      ]
-    }
-  });
+  const parentConditions = [];
+  if (parentData.email && parentData.email.trim() !== '') {
+    parentConditions.push({ email: parentData.email.trim() });
+  }
+  if (parentData.mobileNumber && parentData.mobileNumber.trim() !== '') {
+    parentConditions.push({ mobileNumber: parentData.mobileNumber.trim() });
+  }
+
+  let parent = null;
+  if (parentConditions.length > 0) {
+    parent = await Parent.findOne({
+      where: {
+        [Op.or]: parentConditions
+      }
+    });
+  }
 
   const school = await School.findByPk(studentData.schoolId);
   const schoolName = school ? school.schoolName : 'Our School';
