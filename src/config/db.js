@@ -25,7 +25,6 @@ export const sequelize = process.env.DATABASE_URL
       dialect: "postgres",
       logging: false,
       define: {
-        underscored: true,
         timestamps: true,
       },
       // Automatically enable SSL for external Render databases
@@ -47,7 +46,6 @@ export const sequelize = process.env.DATABASE_URL
       port: process.env.DB_PORT ? Number(process.env.DB_PORT) : 5432,
       logging: false,
       define: {
-        underscored: true,
         timestamps: true,
       }
     });
