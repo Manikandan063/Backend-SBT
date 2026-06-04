@@ -8,6 +8,10 @@ export const liveLocationSchema = z.object({
   latitude: z.number(),
   longitude: z.number(),
   speed: z.number().optional().default(0),
+  heading: z.number().optional().default(0),
+  accuracy: z.number().optional().default(0),
+  trackingSource: safeStringValidation('Tracking Source').optional(),
+  tripStatus: safeStringValidation('Trip Status').optional(),
   status: safeStringValidation('Status').optional(),
   timestamp: z.string().optional(), // Devices might send their own timestamp
 });

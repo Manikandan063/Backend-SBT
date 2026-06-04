@@ -350,6 +350,10 @@ export const updateLiveLocation = async (locationData) => {
     latitude,
     longitude,
     speed,
+    heading,
+    accuracy,
+    trackingSource,
+    tripStatus,
     status,
     timestamp,
   } = locationData;
@@ -383,6 +387,10 @@ export const updateLiveLocation = async (locationData) => {
     latitude,
     longitude,
     speed: speed || 0,
+    course: heading || 0,
+    accuracy: accuracy || 0,
+    trackingSource: trackingSource || 'AUTO',
+    tripStatus: tripStatus || null,
     status: status || 'morning_pickup',
     timestamp: timestamp ? new Date(timestamp) : new Date(),
   });
@@ -400,6 +408,11 @@ export const updateLiveLocation = async (locationData) => {
       latitude,
       longitude,
       speed: speed || 0,
+      heading: heading || 0,
+      course: heading || 0,
+      accuracy: accuracy || 0,
+      trackingSource: trackingSource || 'AUTO',
+      tripStatus: tripStatus || null,
       trackingStatus: 'LIVE',
       status: 'live',
       lastUpdated: liveLocation.timestamp
@@ -547,7 +560,43 @@ export const getBusLocation = async (idOrDeviceOrMobile) => {
 
   let trackingData = null;
 
-  if (bus.gpsProvider === 'TRACCAR') {
+  const localLocation = await BusLiveLocation.findOne({
+    where: { busId: bus.id },
+  });
+
+  if (localLocation) {
+    const lastUpdateTime = new Date(localLocation.timestamp);
+    const diffInSeconds = Math.floor((new Date() - lastUpdateTime) / 1000);
+    // Use local location if it's explicitly GOOGLE_NAVIGATION OR if it's very fresh (< 5 mins)
+    if (localLocation.trackingSource === 'GOOGLE_NAVIGATION' || (diffInSeconds <= 300)) {
+      let currentTrackingStatus = diffInSeconds <= 60 ? 'LIVE' : (diffInSeconds <= 300 ? 'DELAYED' : 'OFFLINE');
+      
+      trackingData = {
+        busId: bus.id,
+        busNumber: bus.busNumber,
+        busRegisterNumber: bus.busRegisterNumber,
+        latitude: localLocation.latitude,
+        longitude: localLocation.longitude,
+        speed: localLocation.speed || 0,
+        course: localLocation.course || 0,
+        heading: localLocation.course || 0,
+        accuracy: localLocation.accuracy || 0,
+        trackingStatus: currentTrackingStatus,
+        lastUpdated: localLocation.timestamp,
+        gpsAge: diffInSeconds,
+        status: 'live',
+        gpsProvider: bus.gpsProvider || 'INTERNAL',
+        gpsDeviceId: bus.gpsDeviceId,
+        deviceIdentifier: bus.deviceIdentifier,
+        deviceStatus: 'unknown',
+        trackingSource: 'GOOGLE_NAVIGATION',
+        tripStatus: localLocation.tripStatus,
+        schoolId: bus.schoolId,
+      };
+    }
+  }
+
+  if (!trackingData && bus.gpsProvider === 'TRACCAR') {
     try {
       const { traccarDevice, traccarPosition } = await getTraccarDataForBus(bus);
 
@@ -591,6 +640,7 @@ export const getBusLocation = async (idOrDeviceOrMobile) => {
           traccarInternalDeviceId: traccarDevice?.id || null,
           traccarDeviceStatus: traccarDevice?.status || null,
           deviceStatus: traccarDevice?.status || 'unknown',
+          trackingSource: 'TRACCAR',
           schoolId: bus.schoolId,
         };
       }
@@ -600,10 +650,6 @@ export const getBusLocation = async (idOrDeviceOrMobile) => {
   }
 
   if (!trackingData) {
-    const localLocation = await BusLiveLocation.findOne({
-      where: { busId: bus.id },
-    });
-
     if (localLocation) {
       const lastUpdateTime = new Date(localLocation.timestamp);
       const diffInSeconds = Math.floor((new Date() - lastUpdateTime) / 1000);
@@ -637,6 +683,8 @@ export const getBusLocation = async (idOrDeviceOrMobile) => {
         gpsDeviceId: bus.gpsDeviceId,
         deviceIdentifier: bus.deviceIdentifier,
         deviceStatus: 'unknown',
+        trackingSource: localLocation.trackingSource || 'AUTO',
+        tripStatus: localLocation.tripStatus || null,
         schoolId: bus.schoolId,
       };
     }
@@ -669,6 +717,7 @@ export const getBusLocation = async (idOrDeviceOrMobile) => {
       gpsDeviceId: bus.gpsDeviceId,
       deviceIdentifier: bus.deviceIdentifier,
       deviceStatus: 'unknown',
+      trackingSource: 'AUTO',
       schoolId: bus.schoolId,
     };
   } else {
@@ -726,8 +775,17 @@ export const getAllFleetLocations = async (schoolId = null) => {
 
     let deviceStatus = 'offline';
     let traccarInternalDeviceId = null;
+    let trackingSource = bus.liveLocation?.trackingSource || 'TRACCAR';
+    
+    let isActiveGoogleNav = false;
+    if (bus.liveLocation) {
+      const diffInSeconds = Math.floor((new Date() - new Date(bus.liveLocation.timestamp)) / 1000);
+      if (bus.liveLocation.trackingSource === 'GOOGLE_NAVIGATION' || diffInSeconds <= 300 || bus.liveLocation.tripStatus === 'ACTIVE') {
+        isActiveGoogleNav = true;
+      }
+    }
 
-    if (bus.gpsProvider === 'TRACCAR') {
+    if (!isActiveGoogleNav && bus.gpsProvider === 'TRACCAR') {
       const device = traccarDevices.find(
         (d) =>
           String(d.uniqueId) === String(bus.deviceIdentifier) ||
@@ -784,6 +842,7 @@ export const getAllFleetLocations = async (schoolId = null) => {
       course: currentCourse,
       heading: currentCourse,
       accuracy: currentAccuracy,
+      trackingSource: trackingSource,
       trackingStatus: currentTrackingStatus,
       lastUpdated: lastUpdate,
       gpsAge: diffInSeconds,

@@ -31,6 +31,22 @@ const BusLiveLocation = sequelize.define('BusLiveLocation', {
     type: DataTypes.FLOAT,
     defaultValue: 0,
   },
+  course: {
+    type: DataTypes.FLOAT,
+    defaultValue: 0,
+  },
+  accuracy: {
+    type: DataTypes.FLOAT,
+    defaultValue: 0,
+  },
+  trackingSource: {
+    type: DataTypes.ENUM('TRACCAR', 'GOOGLE_NAVIGATION', 'AUTO'),
+    defaultValue: 'AUTO',
+  },
+  tripStatus: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
   status: {
     type: DataTypes.ENUM(
       'inactive', 
