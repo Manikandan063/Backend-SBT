@@ -7,6 +7,8 @@ import { initModels } from "./models/initModels.js";
 import { initSocket } from './shared/socket/socket.js';
 
 import http from 'http';
+import cron from 'node-cron';
+import { processScheduledNotifications } from './modules/notification/notification.service.js';
 
 const PORT = process.env.PORT || 5000;
 
@@ -21,6 +23,16 @@ const startServer = async () => {
   } catch (error) {
     console.error("❌ Database sync failed:", error.message);
   }
+
+  // Initialize cron jobs
+  cron.schedule('* * * * *', async () => {
+    try {
+      await processScheduledNotifications();
+    } catch (error) {
+      console.error('[CRON] Error running scheduled notifications:', error);
+    }
+  });
+  console.log("✅ Scheduled notifications cron initialized");
   
   const server = http.createServer(app);
   initSocket(server);

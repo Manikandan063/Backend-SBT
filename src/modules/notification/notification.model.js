@@ -36,8 +36,12 @@ const Notification = sequelize.define('Notification', {
     allowNull: false,
   },
   status: {
-    type: DataTypes.ENUM('sent', 'failed'),
+    type: DataTypes.ENUM('sent', 'failed', 'scheduled'),
     defaultValue: 'sent',
+  },
+  scheduledAt: {
+    type: DataTypes.DATE,
+    allowNull: true,
   },
 }, {
   tableName: 'notifications',

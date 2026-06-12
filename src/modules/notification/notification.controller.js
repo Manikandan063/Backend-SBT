@@ -11,7 +11,7 @@ export const sendNotification = async (req, res, next) => {
     console.log('[NOTIFICATION] Send Request Body:', req.body);
     console.log('[NOTIFICATION] User from Token:', req.user);
 
-    const { title, body, type, targetType, targetId } = req.body;
+    const { title, body, type, targetType, targetId, scheduledAt } = req.body;
     const schoolId = req.user.schoolId;
     const adminId = req.user.id;
 
@@ -22,9 +22,9 @@ export const sendNotification = async (req, res, next) => {
     let notification;
     if (targetType === 'bus') {
       if (!targetId || targetId === '') throw new AppError('Bus ID is required for targeted alerts', 400);
-      notification = await notificationService.sendToBusRoute(schoolId, adminId, { busId: targetId, title, body, type });
+      notification = await notificationService.sendToBusRoute(schoolId, adminId, { busId: targetId, title, body, type, scheduledAt });
     } else {
-      notification = await notificationService.broadcastToAll(schoolId, adminId, { title, body, type });
+      notification = await notificationService.broadcastToAll(schoolId, adminId, { title, body, type, scheduledAt });
     }
 
     res.status(200).json({

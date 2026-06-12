@@ -248,6 +248,7 @@ export const getSchoolAdminStats = async (schoolId) => {
     Bus.count({ where: whereClause, distinct: true, col: 'driverName' }),
     Bus.count({ where: whereClause, distinct: true, col: 'routeName' }),
     import('../../models/initModels.js').then(m => m.Notification.findAll({
+      where: schoolId ? { [sequelize.Op.or]: [{ schoolId }, { schoolId: null }] } : {},
       limit: 5,
       order: [['createdAt', 'DESC']]
     })).catch(() => [])
@@ -264,8 +265,8 @@ export const getSchoolAdminStats = async (schoolId) => {
   };
 
   const chartData = [
-    { month: 'Jan', value: 85 }, { month: 'Feb', value: 88 }, { month: 'Mar', value: 92 },
-    { month: 'Apr', value: 89 }, { month: 'May', value: 95 }, { month: 'Jun', value: 94 }
+    { month: 'Jan', value: 0 }, { month: 'Feb', value: 0 }, { month: 'Mar', value: 0 },
+    { month: 'Apr', value: 0 }, { month: 'May', value: 0 }, { month: 'Jun', value: 0 }
   ];
 
   const alerts = recentAlerts.map(a => ({
@@ -274,11 +275,6 @@ export const getSchoolAdminStats = async (schoolId) => {
     body: a.body,
     time: a.createdAt
   }));
-
-  if (alerts.length === 0) {
-    alerts.push({ id: 1, title: 'Bus TN 45 AB 6789 delay by 10 mins', body: 'Route 07 - Airport Road', time: new Date() });
-    alerts.push({ id: 2, title: 'All buses are on track', body: 'No issues reported', time: new Date(Date.now() - 3600000) });
-  }
 
   return {
     totalStudents: students,

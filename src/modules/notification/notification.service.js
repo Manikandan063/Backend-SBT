@@ -62,7 +62,7 @@ const sendFCMNotification = async (tokens, title, body, data = {}) => {
 /**
  * Broadcast notification to all parents of a school
  */
-export const broadcastToAll = async (schoolId, adminId, { title, body, type }) => {
+export const broadcastToAll = async (schoolId, adminId, { title, body, type, scheduledAt }) => {
   // 1. Fetch all unique parents who have an FCM token
   // If schoolId is provided, filter by school; otherwise fetch all (Super Admin)
   const studentWhere = schoolId ? { schoolId } : {};
@@ -80,6 +80,8 @@ export const broadcastToAll = async (schoolId, adminId, { title, body, type }) =
   // Extract unique tokens
   const tokens = [...new Set(students.map(s => s.parent?.fcmToken).filter(Boolean))];
   
+  const isScheduled = scheduledAt && new Date(scheduledAt) > new Date();
+
   // 2. Create history record
   const notification = await Notification.create({
     title,
@@ -88,11 +90,14 @@ export const broadcastToAll = async (schoolId, adminId, { title, body, type }) =
     targetType: 'all',
     schoolId: schoolId || null,
     sentBy: adminId,
-    status: 'sent'
+    status: isScheduled ? 'scheduled' : 'sent',
+    scheduledAt: scheduledAt || null
   });
 
-  // 3. Send via FCM
-  await sendFCMNotification(tokens, title, body, { type, notificationId: notification.id });
+  // 3. Send via FCM if not scheduled
+  if (!isScheduled) {
+    await sendFCMNotification(tokens, title, body, { type, notificationId: notification.id });
+  }
 
   return notification;
 };
@@ -100,7 +105,7 @@ export const broadcastToAll = async (schoolId, adminId, { title, body, type }) =
 /**
  * Send notification to parents of a specific bus route
  */
-export const sendToBusRoute = async (schoolId, adminId, { busId, title, body, type }) => {
+export const sendToBusRoute = async (schoolId, adminId, { busId, title, body, type, scheduledAt }) => {
   // 1. Find all students on this bus
   const students = await Student.findAll({
     where: { currentBusId: busId },
@@ -109,6 +114,8 @@ export const sendToBusRoute = async (schoolId, adminId, { busId, title, body, ty
 
   // 2. Extract unique parent tokens
   const tokens = [...new Set(students.map(s => s.parent?.fcmToken).filter(Boolean))];
+
+  const isScheduled = scheduledAt && new Date(scheduledAt) > new Date();
 
   // 3. Create history record
   const notification = await Notification.create({
@@ -119,13 +126,55 @@ export const sendToBusRoute = async (schoolId, adminId, { busId, title, body, ty
     targetId: busId,
     schoolId,
     sentBy: adminId,
-    status: 'sent'
+    status: isScheduled ? 'scheduled' : 'sent',
+    scheduledAt: scheduledAt || null
   });
 
-  // 4. Send via FCM
-  await sendFCMNotification(tokens, title, body, { type, busId, notificationId: notification.id });
+  // 4. Send via FCM if not scheduled
+  if (!isScheduled) {
+    await sendFCMNotification(tokens, title, body, { type, busId, notificationId: notification.id });
+  }
 
   return notification;
+};
+
+/**
+ * Process all scheduled notifications whose time has passed
+ */
+export const processScheduledNotifications = async () => {
+  try {
+    const now = new Date();
+    const scheduledNotifications = await Notification.findAll({
+      where: {
+        status: 'scheduled',
+        scheduledAt: { [Op.lte]: now }
+      }
+    });
+
+    for (const notification of scheduledNotifications) {
+      if (notification.targetType === 'bus') {
+        const students = await Student.findAll({
+          where: { currentBusId: notification.targetId },
+          include: [{ model: Parent, as: 'parent', attributes: ['fcmToken'] }]
+        });
+        const tokens = [...new Set(students.map(s => s.parent?.fcmToken).filter(Boolean))];
+        await sendFCMNotification(tokens, notification.title, notification.body, { type: notification.type, busId: notification.targetId, notificationId: notification.id });
+      } else {
+        const studentWhere = notification.schoolId ? { schoolId: notification.schoolId } : {};
+        const students = await Student.findAll({
+          where: studentWhere,
+          include: [{ model: Parent, as: 'parent', attributes: ['fcmToken'] }]
+        });
+        const tokens = [...new Set(students.map(s => s.parent?.fcmToken).filter(Boolean))];
+        await sendFCMNotification(tokens, notification.title, notification.body, { type: notification.type, notificationId: notification.id });
+      }
+      
+      notification.status = 'sent';
+      await notification.save();
+    }
+  } catch (error) {
+    console.error('[CRON] Error processing scheduled notifications:', error);
+  }
 };
 
 /**
