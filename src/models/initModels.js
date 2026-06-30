@@ -47,8 +47,8 @@ const initModels = () => {
   Admin.belongsTo(School, { foreignKey: 'schoolId', targetKey: 'id', as: 'school' });
 
   // Parent - DismissedNotification (One to Many)
-  Parent.hasMany(DismissedNotification, { foreignKey: 'parentId', as: 'dismissedNotifications', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
-  DismissedNotification.belongsTo(Parent, { foreignKey: 'parentId', as: 'parent' });
+  Parent.hasMany(DismissedNotification, { foreignKey: 'parent_Id', as: 'dismissedNotifications', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
+  DismissedNotification.belongsTo(Parent, { foreignKey: 'parent_Id', as: 'parent' });
 
   // Notification - DismissedNotification (One to Many)
   Notification.hasMany(DismissedNotification, { foreignKey: 'notificationId', as: 'dismissals', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
