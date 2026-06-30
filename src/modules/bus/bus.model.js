@@ -28,6 +28,7 @@ export const Bus = sequelize.define("Bus", {
   schoolId: {
     type: DataTypes.UUID,
     allowNull: false,
+    field: 'school_id',
   },
   driverName: {
     type: DataTypes.STRING,

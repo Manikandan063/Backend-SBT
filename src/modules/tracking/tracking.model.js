@@ -14,6 +14,7 @@ const BusLiveLocation = sequelize.define('BusLiveLocation', {
     type: DataTypes.UUID,
     allowNull: false,
     unique: true, // Only one live location record per bus
+    field: 'bus_id',
   },
   gpsDeviceId: {
     type: DataTypes.STRING,

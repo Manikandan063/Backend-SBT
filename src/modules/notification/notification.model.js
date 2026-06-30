@@ -30,6 +30,7 @@ const Notification = sequelize.define('Notification', {
   schoolId: {
     type: DataTypes.UUID,
     allowNull: true,
+    field: 'school_id',
   },
   sentBy: {
     type: DataTypes.UUID, // School Admin ID

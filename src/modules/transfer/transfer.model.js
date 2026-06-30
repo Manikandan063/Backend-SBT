@@ -10,14 +10,17 @@ const BusTransferLog = sequelize.define('BusTransferLog', {
   studentId: {
     type: DataTypes.UUID,
     allowNull: false,
+    field: 'student_id',
   },
   oldBusId: {
     type: DataTypes.UUID,
     allowNull: true, // Null for first assignment
+    field: 'old_bus_id',
   },
   newBusId: {
     type: DataTypes.UUID,
     allowNull: false,
+    field: 'new_bus_id',
   },
   reason: {
     type: DataTypes.TEXT,

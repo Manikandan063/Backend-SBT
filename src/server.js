@@ -17,9 +17,10 @@ const startServer = async () => {
   initModels();
   
   try {
+    console.log("✅ All Sequelize models initialized successfully");
     // Normal sync for production (avoids dropping tables or failing on unique constraints)
-    await sequelize.sync({ alter: true });
-    console.log("✅ Database synced successfully with alter");
+    await sequelize.sync({ alter: false });
+    console.log("✅ Database synced successfully with alter: false");
   } catch (error) {
     console.error("❌ Database sync failed:", error.message);
   }

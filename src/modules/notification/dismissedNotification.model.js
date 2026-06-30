@@ -10,10 +10,12 @@ const DismissedNotification = sequelize.define('DismissedNotification', {
   parentId: {
     type: DataTypes.UUID,
     allowNull: false,
+    field: 'parent_id',
   },
   notificationId: {
     type: DataTypes.UUID,
     allowNull: false,
+    field: 'notification_id',
   },
 }, {
   tableName: 'dismissed_notifications',
@@ -21,7 +23,7 @@ const DismissedNotification = sequelize.define('DismissedNotification', {
   indexes: [
     {
       unique: true,
-      fields: ['parentId', 'notificationId']
+      fields: ['parent_id', 'notification_id']
     }
   ]
 });

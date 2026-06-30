@@ -30,6 +30,7 @@ const Admin = sequelize.define('Admin', {
   schoolId: {
     type: DataTypes.UUID,
     allowNull: true, // Null for superadmin
+    field: 'school_id',
   },
   profilePicture: {
     type: DataTypes.TEXT,

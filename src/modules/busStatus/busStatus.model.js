@@ -7,6 +7,7 @@ const BusStatus = sequelize.define("BusStatus", {
     type: DataTypes.UUID,
     primaryKey: true,
     allowNull: false,
+    field: 'bus_id',
   },
   latitude: {
     type: DataTypes.DECIMAL(10, 8),
@@ -41,6 +42,7 @@ const BusLog = sequelize.define("BusLog", {
   busId: {
     type: DataTypes.UUID,
     allowNull: false,
+    field: 'bus_id',
   },
   latitude: {
     type: DataTypes.DECIMAL(10, 8),
