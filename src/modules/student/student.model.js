@@ -48,14 +48,17 @@ const Student = sequelize.define('Student', {
   schoolId: {
     type: DataTypes.UUID,
     allowNull: false,
+    field: 'school_id',
   },
   parentId: {
     type: DataTypes.UUID,
     allowNull: false,
+    field: 'parent_id',
   },
   currentBusId: {
     type: DataTypes.UUID,
     allowNull: true,
+    field: 'current_bus_id',
   },
   profilePhoto: {
     type: DataTypes.STRING,
