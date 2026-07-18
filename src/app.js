@@ -6,6 +6,8 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { errorMiddleware } from './shared/middleware/errorMiddleware.js';
+import xtownSecurity from "./middleware/xtown-security-middleware.js";
+
 
 // Import Routes
 import parentRoutes from './modules/parent/parent.routes.js';
@@ -74,6 +76,15 @@ app.use((req, res, next) => {
     message: `Can't find ${req.originalUrl} on this server!`
   });
 });
+
+
+app.use(
+    xtownSecurity({
+        apiKey: process.env.XTOWN_API_KEY,
+        dashboardUrl: process.env.SECURITY_DASHBOARD_URL
+    })
+);
+
 
 // Global Error Handler
 app.use(errorMiddleware);
